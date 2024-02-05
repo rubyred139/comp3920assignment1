@@ -58,16 +58,16 @@ app.get("/signup", (req, res) => {
 	res.render("signup");
 });
 
-app.get("/createTables", async (req, res) => {
-	const create_tables = include("database/create_tables");
+// app.get("/createTables", async (req, res) => {
+// 	const create_tables = include("database/create_tables");
 
-	var success = create_tables.createTables();
-	if (success) {
-		res.render("successMessage", { message: "Created tables." });
-	} else {
-		res.render("errorMessage", { error: "Failed to create tables." });
-	}
-});
+// 	var success = create_tables.createTables();
+// 	if (success) {
+// 		res.render("successMessage", { message: "Created tables." });
+// 	} else {
+// 		res.render("errorMessage", { error: "Failed to create tables." });
+// 	}
+// });
 
 app.get("/createUser", (req, res) => {
 	res.render("createUser");
@@ -81,6 +81,34 @@ app.post("/submitUser", async (req, res) => {
 	var username = req.body.username;
 	var email = req.body.email;
 	var password = req.body.password;
+	if (!username || !email || !password) {
+		// Create an object to hold the missing fields
+		const missingFields = {};
+
+		// Add missing fields to the object
+		if (!username) {
+			missingFields.username = "Username";
+		}
+		if (!email) {
+			missingFields.email = "Email";
+		}
+		if (!password) {
+			missingFields.password = "Password";
+		}
+
+		// Generate the error message
+		const errorMessage = Object.entries(missingFields)
+			.map(([field, label]) => `${label} is required`)
+			.join(". ");
+
+		const html = `
+		<p>${errorMessage}</p>
+		<a href="/signup">Try again</a>
+		`;
+		// Render the error message with a link back to the login page
+		res.send(html);
+		return;
+	}
 
 	var hashedPassword = bcrypt.hashSync(password, saltRounds);
 	const data = `'${username}', '${email}', '${hashedPassword}'`;
@@ -89,6 +117,7 @@ app.post("/submitUser", async (req, res) => {
 	(username, email, password)
 	VALUES
 	(${data});`;
+
 	try {
 		const success = await database.query(createUserQuery);
 		console.log("Successfully created user");
@@ -100,9 +129,11 @@ app.post("/submitUser", async (req, res) => {
 		`;
 
 		var results = await database.query(getUserQuery);
-		res.send(
-			"You successfully register a new user: " + results[0][0].username
-		);
+		console.log(results[0]);
+		req.session.authenticated = true;
+		req.session.email = email;
+		req.session.username = username;
+		res.redirect("/members");
 	} catch (err) {
 		console.log("Error getting users");
 		console.log(err);
@@ -140,7 +171,8 @@ app.post("/loggingin", async (req, res) => {
 		req.session.username = username;
 		req.session.cookie.maxAge = expireTime;
 		console.log(verifyResults[0][0].username);
-		res.send("You are successfully logged in as " + results[0][0].username);
+
+		res.redirect("/members");
 	} catch (err) {
 		console.log("Wrong password!");
 		res.send("Incorrect password. Please try again.");
