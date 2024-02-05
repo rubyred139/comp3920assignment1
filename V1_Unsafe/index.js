@@ -180,31 +180,38 @@ app.post("/loggingin", async (req, res) => {
 	`;
 	try {
 		var results = await database.query(getUserQuery);
-		console.log(results[0][0]);
+		if (results[0][0] != null) {
+			console.log(results[0]);
+			var password_compare = bcrypt.compareSync(
+				password,
+				results[0][0].password
+			);
+			console.log("password: " + password_compare);
+			let verifyUserQuery = `
+			SELECT username
+			FROM user
+			WHERE username LIKE '${username}' AND ${password_compare}
+			`;
+			try {
+				var verifyResults = await database.query(verifyUserQuery);
+				req.session.authenticated = true;
+				req.session.username = username;
+				req.session.cookie.maxAge = expireTime;
+				console.log(verifyResults[0][0].username);
+
+				res.redirect("/members");
+			} catch (err) {
+				console.log("Wrong password!");
+				res.send("Incorrect password. Please try again.");
+				console.log(err);
+				return false;
+			}
+		} else {
+			console.log("Error getting users");
+			return false;
+		}
 	} catch (err) {
 		console.log("Error getting users");
-		console.log(err);
-		return false;
-	}
-
-	var password_compare = bcrypt.compareSync(password, results[0][0].password);
-	console.log("password: " + password_compare);
-	let verifyUserQuery = `
-	SELECT username
-	FROM user
-	WHERE username LIKE '${username}' AND ${password_compare}
-	`;
-	try {
-		var verifyResults = await database.query(verifyUserQuery);
-		req.session.authenticated = true;
-		req.session.username = username;
-		req.session.cookie.maxAge = expireTime;
-		console.log(verifyResults[0][0].username);
-
-		res.redirect("/members");
-	} catch (err) {
-		console.log("Wrong password!");
-		res.send("Incorrect password. Please try again.");
 		console.log(err);
 		return false;
 	}
