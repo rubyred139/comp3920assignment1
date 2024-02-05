@@ -219,7 +219,7 @@ app.get("/members", (req, res) => {
 		if (randomIndex == 0) {
 			randomImage = "<img src='/socks.gif' style='width:250px;'>";
 		} else if (randomIndex == 1) {
-			randomImage = "<img src='/fluffy.gif' style='width:250px;'>";
+			randomImage = "<img src='/nail.gif' style='width:250px;'>";
 		} else {
 			randomImage = "<img src='/sandwitch.gif' style='width:250px;'>";
 		}
