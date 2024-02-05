@@ -82,6 +82,35 @@ app.post("/submitUser", async (req, res) => {
 	var email = req.body.email;
 	var password = req.body.password;
 
+	if (!username || !email || !password) {
+		// Create an object to hold the missing fields
+		const missingFields = {};
+
+		// Add missing fields to the object
+		if (!username) {
+			missingFields.username = "Username";
+		}
+		if (!email) {
+			missingFields.email = "Email";
+		}
+		if (!password) {
+			missingFields.password = "Password";
+		}
+
+		// Generate the error message
+		const errorMessage = Object.entries(missingFields)
+			.map(([field, label]) => `${label} is required`)
+			.join(". ");
+
+		const html = `
+		<p>${errorMessage}</p>
+		<a href="/signup">Try again</a>
+		`;
+		// Render the error message with a link back to the login page
+		res.send(html);
+		return;
+	}
+
 	var hashedPassword = bcrypt.hashSync(password, saltRounds);
 
 	var success = await db_users.createUser({
@@ -93,7 +122,10 @@ app.post("/submitUser", async (req, res) => {
 	if (success) {
 		var results = await db_users.getUsers();
 
-		res.render("loggedin", { users: results });
+		req.session.authenticated = true;
+		req.session.email = email;
+		req.session.username = username;
+		res.redirect("/members");
 	} else {
 		res.render("errorMessage", { error: "Failed to create user." });
 	}
@@ -116,7 +148,7 @@ app.post("/loggingin", async (req, res) => {
 				req.session.username = username;
 				req.session.cookie.maxAge = expireTime;
 
-				res.redirect("/loggedIn");
+				res.redirect("/members");
 				return;
 			} else {
 				console.log("invalid password");
@@ -172,12 +204,6 @@ function sessionValidation(req, res, next) {
 		next();
 	}
 }
-
-app.use("/loggedin", sessionValidation);
-
-app.get("/loggedin", (req, res) => {
-	res.render("loggedin");
-});
 
 app.use(express.static(__dirname + "/public"));
 
