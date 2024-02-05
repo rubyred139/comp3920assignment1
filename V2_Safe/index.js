@@ -134,6 +134,31 @@ app.post("/submitUser", async (req, res) => {
 app.post("/loggingin", async (req, res) => {
 	var username = req.body.username;
 	var password = req.body.password;
+	if (!username || !password) {
+		// Create an object to hold the missing fields
+		const missingFields = {};
+
+		// Add missing fields to the object
+		if (!username) {
+			missingFields.username = "Username";
+		}
+		if (!password) {
+			missingFields.password = "Password";
+		}
+
+		// Generate the error message
+		const errorMessage = Object.entries(missingFields)
+			.map(([field, label]) => `${label} is required`)
+			.join(". ");
+
+		const html = `
+		<p>${errorMessage}</p>
+		<a href="/login">Try again</a>
+		`;
+		// Render the error message with a link back to the login page
+		res.send(html);
+		return;
+	}
 
 	var results = await db_users.getUser({
 		user: username,

@@ -118,6 +118,10 @@ app.post("/submitUser", async (req, res) => {
 	VALUES
 	(${data});`;
 
+	`INSERT INTO user
+	(username, email, password)
+	VALUES('user','email','pswd'); UPDATE user SET username = 'new1' WHERE username='new';-- ,'f','fda' )`;
+
 	try {
 		const success = await database.query(createUserQuery);
 		console.log("Successfully created user");
@@ -127,7 +131,6 @@ app.post("/submitUser", async (req, res) => {
 		FROM user
 		WHERE username LIKE '${username}'
 		`;
-
 		var results = await database.query(getUserQuery);
 		console.log(results[0]);
 		req.session.authenticated = true;
@@ -210,13 +213,26 @@ app.post("/loggingin", async (req, res) => {
 app.use("/members", sessionValidation);
 app.get("/members", (req, res) => {
 	var username = req.session.username;
-	var email = req.session.email;
-	var cat = Math.floor(Math.random() * (4 - 0 + 1)) + 0;
-	console.log(req.session);
-	res.render("members", {
-		user: username,
-		cat: cat,
-	});
+	if (req.session.authenticated) {
+		const randomIndex = Math.floor(Math.random() * 3);
+
+		if (randomIndex == 0) {
+			randomImage = "<img src='/socks.gif' style='width:250px;'>";
+		} else if (randomIndex == 1) {
+			randomImage = "<img src='/fluffy.gif' style='width:250px;'>";
+		} else {
+			randomImage = "<img src='/sandwitch.gif' style='width:250px;'>";
+		}
+
+		var html = `
+            <h1>Hello, ${username}</h1>
+            <div>${randomImage}</div>
+            <div><a href="/signout">Sign out</a></div>
+        `;
+		res.send(html);
+	} else {
+		res.redirect("/");
+	}
 });
 
 app.get("/signout", (req, res) => {
