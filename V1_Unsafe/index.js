@@ -208,10 +208,12 @@ app.post("/loggingin", async (req, res) => {
 			}
 		} else {
 			console.log("Error getting users");
+			res.redirect("/login");
 			return false;
 		}
 	} catch (err) {
 		console.log("Error getting users");
+		res.redirect("/login");
 		console.log(err);
 		return false;
 	}
